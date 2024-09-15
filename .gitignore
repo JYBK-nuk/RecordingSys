@@ -1,0 +1,74 @@
+recordings/
+
+# 編譯的 Python 文件
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C擴展編譯文件
+*.so
+
+# Jupyter Notebook的檢查點文件
+.ipynb_checkpoints
+
+# 環境變量文件
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# 安裝包
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+var/
+sdist/
+wheels/
+*.manifest
+.installed.cfg
+*.egg-info/
+pip-wheel-metadata/
+share/python-wheels/
+
+# 數據庫
+*.db
+*.sqlite
+
+# 單元測試
+.coverage
+.tox/
+.nox/
+*.cover
+coverage.xml
+*.log
+nosetests.xml
+pytest_cache/
+.pytest_cache/
+htmlcov/
+
+# 我的pyenv
+.python-version
+
+# ipython歷史
+.ipython
+
+# pycharm ide
+.idea/
+.vscode/
+*.swp
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# 臨時文件
+*.tmp
+*.temp
+
+# MacOS系統文件
+.DS_Store

@@ -1,0 +1,4 @@
+PyQt5
+h5py
+numpy
+opencv-python

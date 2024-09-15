@@ -1,0 +1,10 @@
+asyncio
+websockets
+opencv-python
+pydantic
+h5py
+numpy
+typing
+loguru
+tqdm
+av
