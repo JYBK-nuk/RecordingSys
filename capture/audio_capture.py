@@ -1,33 +1,35 @@
 # capture/audio_capture.py
 
-import av
 import threading
 from datetime import timedelta
 import time
 from typing import Optional, Callable
-
-from tqdm import tqdm
+import numpy as np
+import sounddevice as sd
 
 
 class AudioCapture:
-    def __init__(self, source=None, process_func: Optional[Callable] = None):
+    def __init__(
+        self,
+        source: int = None,
+        out_func: Optional[Callable] = None,
+        samplerate=44100,
+        channels=1,
+    ):
         """
         初始化音頻捕捉模塊
 
         參數：
         - source: 音頻設備名稱或文件路徑
-        - process_func: 處理函數，如果提供，則音頻幀將被傳遞給該函數處理
+        - out_func: 處理音頻數據的函數 (indata, timestamp, source)
         """
-        if source is None:
-            source = "default"  # 使用默認音頻設備
         self.source = source
-        # 根據操作系統設置適當的輸入格式
-        self.container = av.open(source, format='alsa', mode='r')
-        self.audio_stream = self.container.streams.audio[0]
+        self.samplerate = samplerate
+        self.channels = channels
+        self.out_func = out_func
         self.is_running: bool = False
         self.start_time: Optional[float] = None
         self.thread: Optional[threading.Thread] = None
-        self.process_func = process_func  # 處理函數
 
     def get_elapsed_time(self) -> str:
         """
@@ -38,25 +40,34 @@ class AudioCapture:
         elapsed_seconds = int(time.time() - self.start_time)
         return str(timedelta(seconds=elapsed_seconds))
 
+    def audio_callback(self, indata: np.ndarray, frames: int, time, status):
+        """
+        音频输入设备的回调函数，用于处理捕获的音频帧
+
+        参数：
+        - indata: 输入音频数据
+        - frames: 每次回调中的帧数
+        - time: 时间信息
+        - status: 状态信息
+        """
+        if not self.is_running:
+            return
+        timestamp = time.inputBufferAdcTime  # 取得音频输入时间戳
+        if self.out_func:
+            self.out_func(indata, timestamp, self.source)
+
     def capture_loop(self) -> None:
         """
-        捕捉循環，持續捕捉音頻數據
+        捕獲音頻數據循環，通過 sounddevice 的輸入流進行捕捉
         """
-        with tqdm(total=0, bar_format="{desc}") as t:
-            for packet in self.container.demux(self.audio_stream):
-                if not self.is_running:
-                    break
-                for frame in packet.decode():
-                    timestamp = time.time()
-                    if self.process_func:
-                        # 將音頻幀和時間戳傳遞給處理函數
-                        self.process_func(frame, timestamp)
-                    else:
-                        pass
-                    # 更新錄音時間顯示
-                    t.set_description(f"錄音時間：{self.get_elapsed_time()}")
-                    t.refresh()
-        self.container.close()
+        with sd.InputStream(
+            device=self.source,
+            channels=self.channels,
+            samplerate=self.samplerate,
+            callback=self.audio_callback,
+        ):
+            while self.is_running:
+                time.sleep(0.1)
 
     def start(self) -> None:
         """
@@ -76,4 +87,3 @@ class AudioCapture:
         self.is_running = False
         if self.thread is not None:
             self.thread.join()
-        self.container.close()

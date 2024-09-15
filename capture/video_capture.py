@@ -63,18 +63,15 @@ class VideoCapture:
         """
         捕捉循環，持續捕捉視頻幀，並根據需要處理
         """
-        with tqdm(total=0, bar_format="{desc}") as t:
-            while self.is_running:
-                ret, frame = self.cap.read()
-                if not ret:
-                    logger.error("Error: Failed to grab frame.")
-                    break
-                timestamp = time.time()
+        while self.is_running:
+            ret, frame = self.cap.read()
+            if not ret:
+                logger.error("Error: Failed to grab frame.")
+                break
+            timestamp = time.time()
 
-                # Process the frame using the pipeline
-                self.processing_pipeline.process(frame, timestamp)
-
-                t.refresh()
+            # Process the frame using the pipeline
+            self.processing_pipeline.process(frame, timestamp)
         self.cap.release()
 
     def start(self) -> None:
