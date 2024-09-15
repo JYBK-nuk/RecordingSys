@@ -1,7 +1,14 @@
 ## TODO
-- [ ] 錄製聲音，並儲存
 - [ ] 黑板處理 Pipeline stages
-- [ ] 多軌錄影（多路影像處理OK，多路儲存沒做？吧（還沒測試過））
+- [x] 多軌錄影
+  - [x] 多路影像Pipeline處理
+  - [x] 多路聲音採集
+- [ ] 儲存系統
+  - [x] 更多資訊儲存
+  - [ ] 多路影像儲存
+  - [x] 多路聲音儲存 (wav)
+  - [ ] H.264 265 壓縮
+  - [ ] Preview 串流輸出
 ...
 
 
@@ -14,8 +21,8 @@
 ├── event_decorators.py               # 事件裝飾器的定義，用於註冊事件處理函數
 ├── capture/                          # 影音相關模塊
 │   ├── capture_module.py             # 影音錄製控制器
-│   ├── video_capture.py              # 影像捕捉模塊
-│   ├── audio_capture.py              # 音訊捕捉模塊 # TODO
+│   ├── video_capture.py              # 影像捕捉模塊 # TODO: 還是h.264 265好了，檔案賊大
+│   ├── audio_capture.py              # 音訊捕捉模塊
 ├── pipeline/                         # 處理Pipeline模塊
 │   ├── processing_pipeline.py        # 執行處理Pipeline
 │   ├── pipeline_stage.py             # 處理階段的BaseClass
