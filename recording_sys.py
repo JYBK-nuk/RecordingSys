@@ -7,16 +7,20 @@ import sounddevice as sd
 from logger import logger
 from storage.storage_module import StorageModule
 from controller import ControllerModule
-from pipeline.stages import PersonDetectionStage, ImageCroppingStage, DeblurringStage
 
 
 class RecordingSys:
     def __init__(
-        self, controller_module: ControllerModule, storage_module: StorageModule
+        self,
+        controller_module: ControllerModule,
+        video_sources: list[VideoSource],
+        audio_sources: list[AudioSource],
     ) -> None:
         self.controller_module: ControllerModule = controller_module
-        self.storage_module: StorageModule = storage_module
         self.recording: bool = False
+
+        self.video_sources: list[VideoSource] = video_sources
+        self.audio_sources: list[AudioSource] = audio_sources
 
         self.capture_module: CaptureModule = None
         self._print_startup_message()
@@ -32,28 +36,8 @@ class RecordingSys:
         print(sd.query_devices())
         self.capture_module = CaptureModule(
             storage_module=self.storage_module,
-            video_sources=[
-                VideoSource(
-                    source=0,
-                    pipelines=[
-                        PersonDetectionStage(),
-                        ImageCroppingStage(),
-                        DeblurringStage(),
-                    ],
-                ),
-                VideoSource(
-                    source=1,
-                    pipelines=[
-                        PersonDetectionStage(),
-                        ImageCroppingStage(),
-                        DeblurringStage(),
-                    ],
-                )
-            ],
-            audio_sources=[
-                AudioSource(source=0, samplerate=44100, channels=1),
-                AudioSource(source=2, samplerate=44100, channels=1),
-            ],
+            video_sources=self.video_sources,
+            audio_sources=self.audio_sources,
         )
         logger.info("🎈 Capture module initialized.")
 
@@ -73,7 +57,7 @@ class RecordingSys:
     def start_recording(self) -> None:
         if not self.recording:
             self.recording = True
-            self.capture_module.start_capture()
+            self.capture_module.start_capture(storage_module=StorageModule())
             logger.info("Recording started. 📹")
         else:
             logger.warning("Recording is already in progress.")
@@ -97,16 +81,30 @@ class RecordingSys:
     @event_handler("ENABLE_STAGE")
     async def handle_enable_stage(self, data: dict) -> None:
         stage_name: str = data.get("stage_name")
-        self.processing_pipeline.set_stage_enabled(stage_name, True)
+        source: int = data.get("source")
+        for vc in self.capture_module.video_captures:
+            if vc.source == source:
+                vc.processing_pipeline.set_stage_enabled(stage_name, True)
+                break
 
     @event_handler("DISABLE_STAGE")
     async def handle_disable_stage(self, data: dict) -> None:
         stage_name: str = data.get("stage_name")
-        self.processing_pipeline.set_stage_enabled(stage_name, False)
+        source: int = data.get("source")
+        for vc in self.capture_module.video_captures:
+            if vc.source == source:
+                vc.processing_pipeline.set_stage_enabled(stage_name, False)
+                break
 
     @event_handler("SET_PARAMETER")
     async def handle_set_parameter(self, data: dict) -> None:
         stage_name: str = data.get("stage_name")
         param_name: str = data.get("param_name")
         value: Any = data.get("value")
-        self.processing_pipeline.set_stage_parameter(stage_name, param_name, value)
+        source: int = data.get("source")
+        for vc in self.capture_module.video_captures:
+            if vc.source == source:
+                vc.processing_pipeline.set_stage_parameter(
+                    stage_name, param_name, value
+                )
+                break

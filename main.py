@@ -1,19 +1,34 @@
 # main.py
 
 import asyncio
+from capture.capture_module import AudioSource, VideoSource
 from recording_sys import RecordingSys
 from controller import ControllerModule
+from pipeline.stages import PersonDetectionStage, ImageCroppingStage, DeblurringStage
 from storage.storage_module import StorageModule
 
 
 async def main() -> None:
     ws_uri: str = "ws://server_address"
     controller_module = ControllerModule(ws_uri)
-    storage_module = StorageModule({
-        "file_path": "recordings",
-        "file_name_format": "{timestamp}.h5"
-    })
-    recording_sys = RecordingSys(controller_module, storage_module)
+    audo_sources = [
+        # AudioSource(source=0, samplerate=44100, channels=1),
+        # AudioSource(source=2, samplerate=44100, channels=1),
+    ]
+    viedo_sources = [
+        VideoSource(
+            source=0,
+            pipelines=[
+                PersonDetectionStage(),
+                ImageCroppingStage(),
+                DeblurringStage(),
+            ],
+        )
+    ]
+
+    recording_sys = RecordingSys(
+        controller_module, viedo_sources, audo_sources
+    )
 
     # Start the controller module (WebSocket listener)
     await controller_module.start()

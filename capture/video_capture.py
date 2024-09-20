@@ -3,7 +3,6 @@ from datetime import timedelta
 import time
 from typing import List, Optional, Callable
 import cv2
-from tqdm import tqdm
 from .logger import logger
 from pipeline import ProcessingPipeline
 from pipeline.pipeline_stage import PipelineStage

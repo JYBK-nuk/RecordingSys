@@ -3,6 +3,7 @@
 from capture.video_capture import VideoCapture
 from capture.audio_capture import AudioCapture
 from typing import List, Optional
+from collections import defaultdict
 from .logger import logger
 from models.frame_data_model import FrameDataModel
 from pipeline.pipeline_stage import PipelineStage
@@ -26,10 +27,20 @@ class AudioSource:
         self.channels = channels
 
 
+class CaptureBuffer:
+    videos = {}
+    audios = defaultdict(callable)
+
+    def save_frame(self, frame, timestamp: float, data: FrameDataModel):
+        self.videos[timestamp] = (frame, data, timestamp)
+
+    def set_audio_callback(self, source: int, callback: callable):
+        self.audios[source] = callback
+
+
 class CaptureModule:
     def __init__(
         self,
-        storage_module: StorageModule,
         video_sources: List[VideoSource] = [],
         audio_sources: List[AudioSource] = [],
     ):
@@ -42,7 +53,8 @@ class CaptureModule:
         """
         self.video_captures: List[VideoCapture] = []
         self.audio_captures: List[AudioCapture] = []
-        self.storage_module = storage_module
+
+        self.buffer: CaptureBuffer = CaptureBuffer()
 
         # 創建視頻捕獲實例
         for idx, source in enumerate(video_sources):
@@ -73,17 +85,12 @@ class CaptureModule:
     def process_audio_frame(self, frame, timestamp: float, source: int):
         self.storage_module.save_audio_frame(frame, timestamp, source)
 
-    def start_capture(self) -> None:
-        """
-        開始所有視頻和音頻捕捉
-        """
-
+    def capture_kernel_start(self):
         for vc in self.video_captures:
             logger.info(f"👀 Starting video capture : {vc.source}")
             vc.start()
         for ac in self.audio_captures:
             logger.info(f"👀 Starting audio capture : {ac.source}")
-            self.storage_module.open_wav_file(ac.source, ac.samplerate, ac.channels)
             ac.start()
         self.storage_module.start_video_writer_thread(
             sources=[vc.source for vc in self.video_captures]
@@ -93,10 +100,10 @@ class CaptureModule:
         """
         停止所有視頻和音頻捕捉
         """
-        logger.info("🛑 Stopping capture module...")
         for vc in self.video_captures:
+            logger.info(f"🛑 Stopping video capture : {vc.source}")
             vc.stop()
         for ac in self.audio_captures:
+            logger.info(f"🛑 Stopping audio capture : {ac.source}")
             ac.stop()
             self.storage_module.close_wav_file(ac.source)
-        self.storage_module.stop_video_writer_thread()
