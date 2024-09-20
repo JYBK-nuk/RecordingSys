@@ -4,6 +4,7 @@ import numpy as np
 import supervision as sv
 
 
+# 人物偵測拆走
 # ----------------------------------------------------------------影像處理的部分 模糊....
 def adjust_contrast(image: np.ndarray, factor: float) -> np.ndarray:
     mean = np.mean(image)
