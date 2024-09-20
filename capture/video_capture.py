@@ -1,3 +1,4 @@
+from collections import defaultdict
 import threading
 from datetime import timedelta
 import time
@@ -9,11 +10,12 @@ from pipeline.pipeline_stage import PipelineStage
 
 
 class VideoCapture:
+    buffer = defaultdict(lambda: None)
+
     def __init__(
         self,
         source=0,
         pipelines: Optional[List[PipelineStage]] = [],
-        out_func: Optional[Callable] = None,
     ):
         """
         初始化視頻捕捉模塊
@@ -32,14 +34,12 @@ class VideoCapture:
         self.is_running: bool = False
         self.start_time: Optional[float] = None
         self.thread: Optional[threading.Thread] = None
-        self.processing_pipeline = self._initialize_pipeline(pipelines, out_func)
-
+        self.processing_pipeline = self._initialize_pipeline(pipelines)
     def _initialize_pipeline(
         self,
         pipelines: Optional[List[PipelineStage]] = [],
-        out_func: Optional[Callable] = None,
     ) -> ProcessingPipeline:
-        processing_pipeline = ProcessingPipeline(out_func, source=self.source)
+        processing_pipeline = ProcessingPipeline(source=self.source)
         for stage in pipelines:
             processing_pipeline.add_stage(stage.__class__.__name__, stage)
 
@@ -70,7 +70,12 @@ class VideoCapture:
             timestamp = time.time()
 
             # Process the frame using the pipeline
-            self.processing_pipeline.process(frame, timestamp)
+            frame, data, timestamp = self.processing_pipeline.process(frame, timestamp)
+
+            self.buffer["frame"] = frame
+            self.buffer["data"] = data
+            self.buffer["timestamp"] = timestamp
+
         self.cap.release()
 
     def start(self) -> None:

@@ -35,7 +35,6 @@ class RecordingSys:
         logger.info("🎈 Initializing capture module...")
         print(sd.query_devices())
         self.capture_module = CaptureModule(
-            storage_module=self.storage_module,
             video_sources=self.video_sources,
             audio_sources=self.audio_sources,
         )
@@ -57,7 +56,7 @@ class RecordingSys:
     def start_recording(self) -> None:
         if not self.recording:
             self.recording = True
-            self.capture_module.start_capture(storage_module=StorageModule())
+            self.capture_module.start_recording()
             logger.info("Recording started. 📹")
         else:
             logger.warning("Recording is already in progress.")
@@ -65,10 +64,14 @@ class RecordingSys:
     def stop_recording(self) -> None:
         if self.recording:
             self.recording = False
-            self.capture_module.stop_capture()
+            self.capture_module.stop_recording()
             logger.info("Recording stopped. 🛑")
         else:
             logger.warning("Recording is not currently in progress.")
+
+    def shutdown(self) -> None:
+        self.capture_module.start_all_captures()
+        logger.info("👋 Shutting down the system...")
 
     @event_handler("START")
     async def handle_start(self, data: dict) -> None:

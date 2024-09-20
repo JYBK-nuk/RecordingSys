@@ -16,7 +16,12 @@ class StorageModule:
     video_files = {}
     video_threads = {}
 
-    def __init__(self, options: dict) -> None:
+    def __init__(
+        self,
+        options: dict = {
+            "file_path": "recordings",
+        },
+    ) -> None:
         self.file_name = datetime.now().strftime(
             "%Y-%m-%d_%H-%M-%S"
         )  # 預設儲存為 WAV/MP4
@@ -152,4 +157,6 @@ class StorageModule:
                     timestamp_key = f"{buffer['timestamp']}"
                     if timestamp_key not in group:
                         sub_group = group.create_group(timestamp_key)
-                        sub_group.create_dataset("data", data=buffer["data"].serialized())
+                        sub_group.create_dataset(
+                            "data", data=buffer["data"].serialized()
+                        )

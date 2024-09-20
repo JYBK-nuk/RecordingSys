@@ -1,5 +1,3 @@
-# capture/capture_module.py
-
 from capture.video_capture import VideoCapture
 from capture.audio_capture import AudioCapture
 from typing import List, Optional
@@ -8,6 +6,8 @@ from .logger import logger
 from models.frame_data_model import FrameDataModel
 from pipeline.pipeline_stage import PipelineStage
 from storage.storage_module import StorageModule
+import cv2
+import threading
 
 
 class VideoSource:
@@ -27,44 +27,24 @@ class AudioSource:
         self.channels = channels
 
 
-class CaptureBuffer:
-    videos = {}
-    audios = defaultdict(callable)
-
-    def save_frame(self, frame, timestamp: float, data: FrameDataModel):
-        self.videos[timestamp] = (frame, data, timestamp)
-
-    def set_audio_callback(self, source: int, callback: callable):
-        self.audios[source] = callback
-
-
 class CaptureModule:
     def __init__(
         self,
         video_sources: List[VideoSource] = [],
         audio_sources: List[AudioSource] = [],
     ):
-        """
-        初始化捕捉模塊，管理多個視頻和音頻捕捉
-
-        參數：
-        - video_sources: 視頻源列表，可以是攝像頭索引或視頻文件路徑
-        - audio_sources: 音頻源列表，可以是音頻設備名稱或文件路徑
-        """
         self.video_captures: List[VideoCapture] = []
         self.audio_captures: List[AudioCapture] = []
-
-        self.buffer: CaptureBuffer = CaptureBuffer()
+        self.storage_module: StorageModule = None
+        self.preview_windows = {}
+        self.is_running = True
 
         # 創建視頻捕獲實例
         for idx, source in enumerate(video_sources):
-            # 將處理函數傳遞給 VideoCapture
             vc = VideoCapture(
                 source.source,
                 source.pipelines,
-                self.process_video_frame,
             )
-
             self.video_captures.append(vc)
 
         # 創建音頻捕獲實例
@@ -77,33 +57,53 @@ class CaptureModule:
             )
             self.audio_captures.append(ac)
 
-    def process_video_frame(
-        self, frame, timestamp: float, data: FrameDataModel, source: int
-    ):
-        self.storage_module.save_frame(frame, timestamp, data, source)
+        # 啟動所有捕獲
+        self.start_all_captures()
 
     def process_audio_frame(self, frame, timestamp: float, source: int):
-        self.storage_module.save_audio_frame(frame, timestamp, source)
+        # 將音頻數據保存到 buffer
+        pass
 
-    def capture_kernel_start(self):
+    def start_preview(self):
+        threading.Thread(target=self._start_preview).start()
+
+    def _start_preview(self):
+        for vc in self.video_captures:
+            cv2.namedWindow(f"Preview - {vc.source}")
+            self.preview_windows[vc.source] = f"Preview - {vc.source}"
+            while self.is_running:
+                if vc.buffer["frame"] is not None:
+                    cv2.imshow(
+                        f"Preview - {vc.source}",
+                        vc.buffer["frame"],
+                    )
+                if cv2.waitKey(1) & 0xFF == ord("q"):
+                    break
+        cv2.destroyAllWindows()
+
+    def start_all_captures(self):
         for vc in self.video_captures:
             logger.info(f"👀 Starting video capture : {vc.source}")
             vc.start()
         for ac in self.audio_captures:
             logger.info(f"👀 Starting audio capture : {ac.source}")
             ac.start()
+        self.start_preview()
+
+    def stop_all_captures(self):
+        self.is_running = False
+        for vc in self.video_captures:
+            vc.stop()
+        for ac in self.audio_captures:
+            ac.stop()
+        cv2.destroyAllWindows()
+
+    def start_recording(self) -> None:
+        self.storage_module = StorageModule()
         self.storage_module.start_video_writer_thread(
             sources=[vc.source for vc in self.video_captures]
         )
 
-    def stop_capture(self) -> None:
-        """
-        停止所有視頻和音頻捕捉
-        """
-        for vc in self.video_captures:
-            logger.info(f"🛑 Stopping video capture : {vc.source}")
-            vc.stop()
-        for ac in self.audio_captures:
-            logger.info(f"🛑 Stopping audio capture : {ac.source}")
-            ac.stop()
-            self.storage_module.close_wav_file(ac.source)
+    def stop_recording(self) -> None:
+        if self.storage_module:
+            self.storage_module.stop_video_writer_thread()

@@ -12,8 +12,8 @@ async def main() -> None:
     ws_uri: str = "ws://server_address"
     controller_module = ControllerModule(ws_uri)
     audo_sources = [
-        # AudioSource(source=0, samplerate=44100, channels=1),
-        # AudioSource(source=2, samplerate=44100, channels=1),
+        AudioSource(source=0, samplerate=44100, channels=1),
+        AudioSource(source=2, samplerate=44100, channels=1),
     ]
     viedo_sources = [
         VideoSource(
@@ -23,12 +23,14 @@ async def main() -> None:
                 ImageCroppingStage(),
                 DeblurringStage(),
             ],
-        )
+        ),
+        VideoSource(
+            source=1,
+            pipelines=[],
+        ),
     ]
 
-    recording_sys = RecordingSys(
-        controller_module, viedo_sources, audo_sources
-    )
+    recording_sys = RecordingSys(controller_module, viedo_sources, audo_sources)
 
     # Start the controller module (WebSocket listener)
     await controller_module.start()
