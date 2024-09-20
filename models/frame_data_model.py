@@ -10,3 +10,6 @@ class FrameDataModel(BaseModel):
 
     # 可以快速添加新的屬性，例如：
     # additional_info: dict = {}
+
+    def serialized(self):
+        return self.model_dump_json()

@@ -40,7 +40,7 @@ class VideoCapture:
         pipelines: Optional[List[PipelineStage]] = [],
         out_func: Optional[Callable] = None,
     ) -> ProcessingPipeline:
-        processing_pipeline = ProcessingPipeline(out_func)
+        processing_pipeline = ProcessingPipeline(out_func, source=self.source)
         for stage in pipelines:
             processing_pipeline.add_stage(stage.__class__.__name__, stage)
 

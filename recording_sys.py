@@ -40,6 +40,14 @@ class RecordingSys:
                         ImageCroppingStage(),
                         DeblurringStage(),
                     ],
+                ),
+                VideoSource(
+                    source=1,
+                    pipelines=[
+                        PersonDetectionStage(),
+                        ImageCroppingStage(),
+                        DeblurringStage(),
+                    ],
                 )
             ],
             audio_sources=[

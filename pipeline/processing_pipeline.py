@@ -7,13 +7,14 @@ from .pipeline_stage import PipelineStage
 
 
 class ProcessingPipeline:
-    def __init__(self, out_func: callable):
+    def __init__(self, out_func: callable, source=0) -> None:
         """
         初始化處理管道，管理處理階段和其配置
 
         out_func: (frame: Any, data: FrameDataModel) -> None
         """
         self.out_func = out_func
+        self.source = source
         self.stages: List[Tuple[str, PipelineStage]] = []
         self.stage_configs: Dict[str, Dict[str, Any]] = {}
 
@@ -70,4 +71,4 @@ class ProcessingPipeline:
                 frame, data = stage.process(frame, data)
 
         # 將處理後的幀和數據傳遞給輸出函數
-        self.out_func(frame, timestamp, data)
+        self.out_func(frame, timestamp, data, self.source)

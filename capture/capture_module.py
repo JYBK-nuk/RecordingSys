@@ -65,8 +65,10 @@ class CaptureModule:
             )
             self.audio_captures.append(ac)
 
-    def process_video_frame(self, frame, timestamp: float, data: FrameDataModel):
-        self.storage_module.save_frame(frame, timestamp, data)
+    def process_video_frame(
+        self, frame, timestamp: float, data: FrameDataModel, source: int
+    ):
+        self.storage_module.save_frame(frame, timestamp, data, source)
 
     def process_audio_frame(self, frame, timestamp: float, source: int):
         self.storage_module.save_audio_frame(frame, timestamp, source)
@@ -75,6 +77,7 @@ class CaptureModule:
         """
         開始所有視頻和音頻捕捉
         """
+
         for vc in self.video_captures:
             logger.info(f"👀 Starting video capture : {vc.source}")
             vc.start()
@@ -82,13 +85,18 @@ class CaptureModule:
             logger.info(f"👀 Starting audio capture : {ac.source}")
             self.storage_module.open_wav_file(ac.source, ac.samplerate, ac.channels)
             ac.start()
+        self.storage_module.start_video_writer_thread(
+            sources=[vc.source for vc in self.video_captures]
+        )
 
     def stop_capture(self) -> None:
         """
         停止所有視頻和音頻捕捉
         """
+        logger.info("🛑 Stopping capture module...")
         for vc in self.video_captures:
             vc.stop()
         for ac in self.audio_captures:
             ac.stop()
             self.storage_module.close_wav_file(ac.source)
+        self.storage_module.stop_video_writer_thread()

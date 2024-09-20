@@ -42,5 +42,5 @@ class PersonDetectionStage(PipelineStage):
             }
             for _ in range(random.randint(0, 10))
         ]
-        return json.dumps(test)
+        return test
         
