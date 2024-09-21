@@ -10,8 +10,6 @@ from pipeline.pipeline_stage import PipelineStage
 
 
 class VideoCapture:
-    buffer = defaultdict(lambda: None)
-
     def __init__(
         self,
         source=0,
@@ -35,6 +33,7 @@ class VideoCapture:
         self.start_time: Optional[float] = None
         self.thread: Optional[threading.Thread] = None
         self.processing_pipeline = self._initialize_pipeline(pipelines)
+        self.buffer = defaultdict(lambda: None)
     def _initialize_pipeline(
         self,
         pipelines: Optional[List[PipelineStage]] = [],

@@ -33,7 +33,6 @@ class RecordingSys:
 
     def _initialize_capture(self) -> None:
         logger.info("🎈 Initializing capture module...")
-        print(sd.query_devices())
         self.capture_module = CaptureModule(
             video_sources=self.video_sources,
             audio_sources=self.audio_sources,
@@ -70,7 +69,7 @@ class RecordingSys:
             logger.warning("Recording is not currently in progress.")
 
     def shutdown(self) -> None:
-        self.capture_module.start_all_captures()
+        self.capture_module.stop_all_captures()
         logger.info("👋 Shutting down the system...")
 
     @event_handler("START")

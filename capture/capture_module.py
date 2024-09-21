@@ -47,6 +47,8 @@ class CaptureModule:
             )
             self.video_captures.append(vc)
 
+        print("\n".join([str(vc.source) for vc in self.video_captures]))
+
         # 創建音頻捕獲實例
         for idx, source in enumerate(audio_sources):
             ac = AudioCapture(
@@ -68,17 +70,30 @@ class CaptureModule:
         threading.Thread(target=self._start_preview).start()
 
     def _start_preview(self):
-        for vc in self.video_captures:
-            cv2.namedWindow(f"Preview - {vc.source}")
-            self.preview_windows[vc.source] = f"Preview - {vc.source}"
-            while self.is_running:
-                if vc.buffer["frame"] is not None:
-                    cv2.imshow(
-                        f"Preview - {vc.source}",
-                        vc.buffer["frame"],
-                    )
-                if cv2.waitKey(1) & 0xFF == ord("q"):
-                    break
+        # Initialize preview windows for each video capture source
+        for video_capture in self.video_captures:
+            source_id = video_capture.source
+            window_name = f"Preview - {source_id}"
+            self.preview_windows[source_id] = window_name
+
+            # Create window for each video source
+            logger.info(f"👀 Starting preview : {source_id}")
+            cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+
+        # Main loop for showing preview
+        while self.is_running:
+            for video_capture in self.video_captures:
+                frame = None
+                frame = video_capture.buffer.get("frame")
+                if frame is not None:
+                    # Show frame in the corresponding preview window
+                    window_name = self.preview_windows[video_capture.source]
+                    cv2.imshow(window_name, frame)
+
+            # Process window events and display delay
+            cv2.waitKey(1)
+
+        # Clean up and close all windows when preview is stopped
         cv2.destroyAllWindows()
 
     def start_all_captures(self):
@@ -97,6 +112,9 @@ class CaptureModule:
         for ac in self.audio_captures:
             ac.stop()
         cv2.destroyAllWindows()
+        # If recording is in progress, stop it
+        if self.storage_module:
+            self.storage_module.stop_video_writer_thread()
 
     def start_recording(self) -> None:
         self.storage_module = StorageModule()
