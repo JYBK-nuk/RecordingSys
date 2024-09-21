@@ -115,13 +115,11 @@ class CaptureModule:
         # If recording is in progress, stop it
         if self.storage_module:
             self.storage_module.stop_video_writer_thread()
-
+            
+    # TODO: Implement the following methods
     def start_recording(self) -> None:
         self.storage_module = StorageModule()
-        self.storage_module.start_video_writer_thread(
-            sources=[vc.source for vc in self.video_captures]
-        )
 
     def stop_recording(self) -> None:
         if self.storage_module:
-            self.storage_module.stop_video_writer_thread()
+            pass

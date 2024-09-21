@@ -5,7 +5,6 @@ from capture.capture_module import AudioSource, CaptureModule, VideoSource
 from event_decorators import event_handler
 import sounddevice as sd
 from logger import logger
-from storage.storage_module import StorageModule
 from controller import ControllerModule
 
 

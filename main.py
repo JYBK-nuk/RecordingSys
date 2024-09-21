@@ -9,7 +9,6 @@ from pipeline.stages import (
     DeblurringStage,
     ImageBinarizationStage,
 )
-from storage.storage_module import StorageModule
 
 is_running = True
 
