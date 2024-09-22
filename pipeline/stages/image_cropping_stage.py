@@ -20,11 +20,11 @@ class ImageCroppingStage(PipelineStage):
         執行圖像裁剪
 
         參數：
-        - frame: 當前視頻幀
+        - frame: 當前影片幀
         - data: 當前幀的數據模型
 
         返回：
-        - frame: 處理後的視頻幀
+        - frame: 處理後的影片幀
         - data: 更新後的數據模型
         """
         # TODO: 添加實際的裁剪代碼

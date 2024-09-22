@@ -1,89 +1,88 @@
-# capture/audio_capture.py
-
 import threading
-from datetime import timedelta
+import queue
 import time
-from typing import Optional, Callable
-import numpy as np
+from typing import Optional
 import sounddevice as sd
+from .logger import logger
 
 
 class AudioCapture:
     def __init__(
         self,
-        source: int = None,
-        out_func: Optional[Callable] = None,
-        samplerate=44100,
-        channels=1,
+        source: Optional[int] = None,
+        samplerate: int = 44100,
+        channels: int = 1,
+        blocksize: int = 1024,
     ):
         """
-        初始化音頻捕捉模塊
+        初始化音頻捕獲模組。
 
         參數：
-        - source: 音頻設備名稱或文件路徑
-        - out_func: 處理音頻數據的函數 (indata, timestamp, source)
+        - source: 麥克風設備索引或音頻設備名稱。
+        - samplerate: 取樣率（Hz）。
+        - channels: 音頻通道數。
+        - blocksize: 每個區塊的幀數。
         """
         self.source = source
         self.samplerate = samplerate
         self.channels = channels
-        self.out_func = out_func
+        self.blocksize = blocksize
+
         self.is_running: bool = False
-        self.start_time: Optional[float] = None
         self.thread: Optional[threading.Thread] = None
+        self.audio_buffer = queue.Queue()
 
-    def get_elapsed_time(self) -> str:
-        """
-        獲取錄音已經進行的時間
-        """
-        if self.start_time is None:
-            return "00:00:00"
-        elapsed_seconds = int(time.time() - self.start_time)
-        return str(timedelta(seconds=elapsed_seconds))
+        self.stream = None
 
-    def audio_callback(self, indata: np.ndarray, frames: int, time, status):
+    def _callback(self, indata, frames, time_info, status):
         """
-        音频输入设备的回调函数，用于处理捕获的音频帧
+        由 sounddevice 呼叫的回調函數，每當有新的音頻區塊可用時觸發。
 
-        参数：
-        - indata: 输入音频数据
-        - frames: 每次回调中的帧数
-        - time: 时间信息
-        - status: 状态信息
+        參數：
+        - indata: 輸入的音頻數據。
+        - frames: 幀數。
+        - time_info: 包含時間信息的字典。
+        - status: 音頻流狀態。
         """
-        if not self.is_running:
-            return
-        timestamp = time.inputBufferAdcTime  # 取得音频输入时间戳
-        if self.out_func:
-            self.out_func(indata, timestamp, self.source)
-
-    def capture_loop(self) -> None:
-        """
-        捕獲音頻數據循環，通過 sounddevice 的輸入流進行捕捉
-        """
-        with sd.InputStream(
-            device=self.source,
-            channels=self.channels,
-            samplerate=self.samplerate,
-            callback=self.audio_callback,
-        ):
-            while self.is_running:
-                time.sleep(0.1)
+        if status:
+            logger.error(f"Audio capture status: {status}")
+        # 將音頻數據和當前時間戳放入緩衝區
+        self.audio_buffer.put((indata.copy(), time.time()))
 
     def start(self) -> None:
         """
-        開始音頻捕捉
+        開始音頻捕獲，通過開啟 InputStream 並開始回調。
         """
         if self.is_running:
+            logger.warning("Audio capture is already running.")
             return
+
         self.is_running = True
-        self.start_time = time.time()
-        self.thread = threading.Thread(target=self.capture_loop)
-        self.thread.start()
+        try:
+            self.stream = sd.InputStream(
+                device=self.source,
+                samplerate=self.samplerate,
+                channels=self.channels,
+                blocksize=self.blocksize,
+                callback=self._callback,
+            )
+            self.stream.start()
+            logger.info(f"🎙️ Started audio capture: Source={self.source}")
+        except Exception as e:
+            logger.error(f"Failed to start audio capture: {e}")
+            self.is_running = False
 
     def stop(self) -> None:
         """
-        停止音頻捕捉
+        停止音頻捕獲，通過停止並關閉 InputStream。
         """
+        if not self.is_running:
+            logger.warning("Audio capture is not running.")
+            return
+
         self.is_running = False
-        if self.thread is not None:
-            self.thread.join()
+        if self.stream:
+            self.stream.stop()
+            self.stream.close()
+            self.stream = None
+            logger.info(f"🎙️ Stopped audio capture: Source={self.source}")

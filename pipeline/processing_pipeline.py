@@ -60,10 +60,10 @@ class ProcessingPipeline:
         self, frame: Any, timestamp: float
     ) -> Tuple[Any, FrameDataModel, float]:
         """
-        處理視頻幀，按照添加的處理階段順序進行處理
+        處理影片幀，按照添加的處理階段順序進行處理
 
         參數：
-        - frame: 待處理的視頻幀
+        - frame: 待處理的影片幀
         - timestamp: 幀的時間戳
         """
         data = FrameDataModel(timestamp=timestamp)

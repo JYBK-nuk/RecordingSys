@@ -16,12 +16,12 @@ class VideoCapture:
         pipelines: Optional[List[PipelineStage]] = [],
     ):
         """
-        初始化視頻捕捉模塊
+        初始化影片捕捉模塊
 
         參數：
-        - source: 攝像頭索引或視頻文件路徑
+        - source: 攝像頭索引或影片文件路徑
         - pipelines: 處理管道階段列表
-        - out_func: 輸出函數，用於處理後的視頻幀
+        - out_func: 輸出函數，用於處理後的影片幀
         """
         self.source = source
         # Use OpenCV to capture video
@@ -34,6 +34,7 @@ class VideoCapture:
         self.thread: Optional[threading.Thread] = None
         self.processing_pipeline = self._initialize_pipeline(pipelines)
         self.buffer = defaultdict(lambda: None)
+
     def _initialize_pipeline(
         self,
         pipelines: Optional[List[PipelineStage]] = [],
@@ -59,7 +60,7 @@ class VideoCapture:
 
     def capture_loop(self) -> None:
         """
-        捕捉循環，持續捕捉視頻幀，並根據需要處理
+        捕捉循環，持續捕捉影片幀，並根據需要處理
         """
         while self.is_running:
             ret, frame = self.cap.read()
@@ -79,7 +80,7 @@ class VideoCapture:
 
     def start(self) -> None:
         """
-        開始視頻捕捉
+        開始影片捕捉
         """
         if self.is_running:
             return
@@ -90,7 +91,7 @@ class VideoCapture:
 
     def stop(self) -> None:
         """
-        停止視頻捕捉
+        停止影片捕捉
         """
         self.is_running = False
         if self.thread is not None:

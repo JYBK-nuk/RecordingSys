@@ -22,11 +22,11 @@ class ImageBinarizationStage(PipelineStage):
         執行圖像二值化
 
         參數：
-        - frame: 當前視頻幀
+        - frame: 當前影片幀
         - data: 當前幀的數據模型
 
         返回：
-        - frame: 處理後的二值化視頻幀
+        - frame: 處理後的二值化影片幀
         - data: 更新後的數據模型
         """
         # 假設輸入的 frame 是灰度圖像，否則需要先將其轉換為灰度圖
