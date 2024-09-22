@@ -1,3 +1,5 @@
+from collections import defaultdict
+import queue
 import cv2
 import h5py
 import wave
@@ -25,6 +27,7 @@ class SaveThread(threading.Thread):
         self.h5_files: Dict[str, h5py.File] = {}
         self.audio_files: Dict[str, wave.Wave_write] = {}  # 用於存儲音頻文件
         self.frame_counters: Dict[str, int] = {}  # 用於記錄每個 ID 的幀索引
+
         self.lock = threading.Lock()
 
     def run(self):
@@ -132,14 +135,17 @@ class SaveThread(threading.Thread):
 
             # 處理音頻幀
             with self.lock:
-                for source_id, audio_queue in self.storage_module.capture_module.audio_buffers.items():
+                for (
+                    source_id,
+                    audio_queue,
+                ) in self.storage_module.audio_buffers.items():
                     if source_id not in self.audio_files:
                         # 初始化音頻文件
                         audio_dir = os.path.join(
                             self.storage_module.base_path,
                             self.storage_module.recording_name,
                             "audios",
-                            str(source_id)
+                            str(source_id),
                         )
                         os.makedirs(audio_dir, exist_ok=True)
                         audio_path = os.path.join(audio_dir, "audio.wav")
@@ -147,20 +153,30 @@ class SaveThread(threading.Thread):
                         # 設定音頻參數
                         # 假設採樣率和通道數與 AudioCapture 一致
                         capture = next(
-                            (ac for ac in self.storage_module.capture_module.audio_captures if ac.source == source_id),
-                            None
+                            (
+                                ac
+                                for ac in self.storage_module.capture_module.audio_captures
+                                if ac.source == source_id
+                            ),
+                            None,
                         )
                         if capture:
                             self.audio_files[source_id].setnchannels(capture.channels)
-                            self.audio_files[source_id].setsampwidth(2)  # 假設 16-bit 音頻
+                            self.audio_files[source_id].setsampwidth(
+                                2
+                            )  # 假設 16-bit 音頻
                             self.audio_files[source_id].setframerate(capture.samplerate)
                         else:
-                            logger.error(f"No matching AudioCapture found for source {source_id}")
+                            logger.error(
+                                f"No matching AudioCapture found for source {source_id}"
+                            )
 
                     while not audio_queue.empty():
                         audio_frame, audio_timestamp = audio_queue.get()
                         # 將音頻數據轉換為適合寫入 WAV 的格式
-                        audio_data = (audio_frame * 32767).astype(np.int16)  # 假設 float32 到 int16
+                        audio_data = (audio_frame * 32767).astype(
+                            np.int16
+                        )  # 假設 float32 到 int16
                         self.audio_files[source_id].writeframes(audio_data.tobytes())
 
             # 計算該次迴圈所花的時間
@@ -185,6 +201,9 @@ class SaveThread(threading.Thread):
             for audio_writer in self.audio_files.values():
                 audio_writer.close()
             self.audio_files.clear()
+
+    def stop(self):
+        self.is_running = False
 
     class StorageModule:
         def __init__(
@@ -229,6 +248,7 @@ class SaveThread(threading.Thread):
             self.save_thread.stop()
             logger.info(f"StorageModule stopped recording: {self.recording_name}")
 
+
 class StorageModule:
     def __init__(
         self,
@@ -241,6 +261,8 @@ class StorageModule:
         self.capture_module = capture_module
         self.save_thread = SaveThread(self, fps=fps)
         self.base_path = base_path
+        self.audio_buffers = defaultdict(queue.Queue)
+
 
     def start(self):
         # 創建基礎錄製目錄

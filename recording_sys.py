@@ -14,6 +14,7 @@ class RecordingSys:
         controller_module: ControllerModule,
         video_sources: list[VideoSource],
         audio_sources: list[AudioSource],
+        preview_mode: bool = False,
     ) -> None:
         self.controller_module: ControllerModule = controller_module
         self.recording: bool = False
@@ -21,22 +22,17 @@ class RecordingSys:
         self.video_sources: list[VideoSource] = video_sources
         self.audio_sources: list[AudioSource] = audio_sources
 
-        self.capture_module: CaptureModule = None
+        self.capture_module = CaptureModule(
+            video_sources=self.video_sources,
+            audio_sources=self.audio_sources,
+            preview_mode=preview_mode,
+        )
         self._print_startup_message()
-        self._initialize_capture()
         self._register_event_handlers()
 
     def _print_startup_message(self) -> None:
         startup_message = "👉 Starting up the system..."
         print(startup_message)
-
-    def _initialize_capture(self) -> None:
-        logger.info("🎈 Initializing capture module...")
-        self.capture_module = CaptureModule(
-            video_sources=self.video_sources,
-            audio_sources=self.audio_sources,
-        )
-        logger.info("🎈 Capture module initialized.")
 
     def _register_event_handlers(self) -> None:
         logger.info("🎈 Registering event handlers...")

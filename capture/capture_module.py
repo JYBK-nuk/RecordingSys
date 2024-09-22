@@ -36,6 +36,7 @@ class CaptureModule:
         self,
         video_sources: List[VideoSource] = [],
         audio_sources: List[AudioSource] = [],
+        preview_mode: bool = False,
     ):
         """
         初始化捕獲模組，包含影片和音頻來源。
@@ -46,9 +47,9 @@ class CaptureModule:
         """
         self.video_captures: List[VideoCapture] = []
         self.audio_captures: List[AudioCapture] = []
-        self.audio_buffers: dict = {}  # 將來源ID映射到音頻緩衝區
         self.storage_module: Optional[StorageModule] = None
         self.preview_windows = {}
+        self.preview_mode = preview_mode
         self.is_running = True
 
         # 初始化影片捕獲
@@ -69,7 +70,6 @@ class CaptureModule:
                 channels=source.channels,
             )
             self.audio_captures.append(ac)
-            self.audio_buffers[source.source] = ac.audio_buffer
 
         # 開始所有捕獲
         self.start_all_captures()
@@ -157,7 +157,8 @@ class CaptureModule:
         for ac in self.audio_captures:
             logger.info(f"🎙️ Starting audio capture: {ac.source}")
             ac.start()
-        self.start_preview()
+        if self.preview_mode:
+            self.start_preview()
 
     def stop_all_captures(self):
         """
@@ -182,6 +183,8 @@ class CaptureModule:
         self.storage_module = StorageModule(file_name, self)
         while not self.check_all_ready():
             time.sleep(0.1)  # 避免忙等待
+        for ac in self.audio_captures:
+            ac.audio_buffer = self.storage_module.audio_buffers[ac.source]
         self.storage_module.start()
 
     def stop_recording(self) -> None:
@@ -191,3 +194,6 @@ class CaptureModule:
         if self.storage_module:
             self.storage_module.stop()
             self.storage_module = None
+
+        for ac in self.audio_captures:
+            ac.audio_buffer = None

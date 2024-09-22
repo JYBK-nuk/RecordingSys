@@ -47,7 +47,8 @@ class AudioCapture:
         if status:
             logger.error(f"Audio capture status: {status}")
         # 將音頻數據和當前時間戳放入緩衝區
-        self.audio_buffer.put((indata.copy(), time.time()))
+        if self.audio_buffer is not None:
+            self.audio_buffer.put((indata.copy(), time.time()))
 
     def start(self) -> None:
         """

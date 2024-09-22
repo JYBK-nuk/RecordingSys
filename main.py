@@ -1,50 +1,55 @@
 import asyncio
+import json
 from capture.capture_module import AudioSource, VideoSource
 from logger import logger
-from recording_sys import RecordingSys
 from controller import ControllerModule
+import os
 from pipeline.stages import (
     PersonDetectionStage,
     ImageCroppingStage,
     DeblurringStage,
     ImageBinarizationStage,
 )
+from recording_sys import RecordingSys
+
+# Sources
+audio_sources = [
+    AudioSource(source=0, samplerate=44100, channels=1),
+    AudioSource(source=2, samplerate=44100, channels=1),
+]
+video_sources = [
+    VideoSource(
+        source=0,
+        pipelines=[
+            PersonDetectionStage(),
+            ImageCroppingStage(),
+            DeblurringStage(),
+            ImageBinarizationStage(),
+        ],
+    ),
+    VideoSource(
+        source=1,
+        pipelines=[ImageBinarizationStage()],
+    ),
+]
+
 
 
 async def main() -> None:
-    ws_uri: str = "ws://server_address"
-    controller_module = ControllerModule(ws_uri)
-    audio_sources = [
-        AudioSource(source=0, samplerate=44100, channels=1),
-        AudioSource(source=2, samplerate=44100, channels=1),
-    ]
-    video_sources = [
-        VideoSource(
-            source=0,
-            pipelines=[
-                PersonDetectionStage(),
-                ImageCroppingStage(),
-                DeblurringStage(),
-                ImageBinarizationStage(),
-            ],
-        ),
-        VideoSource(
-            source=1,
-            pipelines=[ImageBinarizationStage()],
-        ),
-    ]
+    config = load_config()
+    ws_uri: str = config["ws_uri"]
+    controller_module = ControllerModule(ws_uri, token=config["token"])
 
-    recording_sys = RecordingSys(controller_module, video_sources, audio_sources)
+    recording_sys = RecordingSys(
+        controller_module=controller_module,
+        video_sources=video_sources,
+        audio_sources=audio_sources,
+        preview_mode=config["preview"],
+    )
 
     try:
         # 啟動 controller module (WebSocket listener)
         await controller_module.start()
-
-        # 開始錄製
-        recording_sys.start_recording()
-
-        # 測試操作
-        await test(recording_sys)
 
         # 保持主程式運行，直到收到中斷信號
         while True:
@@ -60,17 +65,19 @@ async def main() -> None:
         await controller_module.stop()
         logger.info("Program exited.")
 
+def load_config():
+    config_path = "config.json"
+    default_config = {
+        "ws_uri": "ws://127.0.0.1:3001",
+        "token": "your_token_here",
+        "preview": True,
+    }
+    if not os.path.exists(config_path):
+        with open(config_path, "w") as f:
+            json.dump(default_config, f, indent=4)
 
-async def test(recording_sys: RecordingSys) -> None:
-    print("測試錄製系統...")
-    await asyncio.sleep(5)
-    await recording_sys.handle_disable_stage(
-        {"stage_name": "ImageBinarizationStage", "source": 0}
-    )
-    await asyncio.sleep(5)
-    recording_sys.stop_recording()
-    print("錄製已停止。")
-
+    config = json.load(open(config_path))
+    return config
 
 if __name__ == "__main__":
     try:

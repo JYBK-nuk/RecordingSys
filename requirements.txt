@@ -1,4 +1,6 @@
 asyncio
+aiohttp
+python-socketio
 websockets
 opencv-python
 pydantic
