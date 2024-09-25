@@ -105,7 +105,7 @@ def find_center_axis(self, frame, model):
     return closest_blackboard
 
 
-# step3
+# step3  移動到person_detection_stage.py
 def get_detections(self, frame, model):
     results = model.predict(frame, conf=0.5)
     detection = sv.Detections.from_ultralytics(results[0])
