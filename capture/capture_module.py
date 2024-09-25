@@ -6,13 +6,16 @@ from capture.video_capture import VideoCapture
 from capture.audio_capture import AudioCapture
 from typing import List, Optional
 from collections import defaultdict
+
+from controller import ControllerModule
 from .logger import logger
 from models.frame_data_model import FrameDataModel
 from pipeline.pipeline_stage import PipelineStage
 from storage.storage_module import StorageModule
 import cv2
 import numpy as np
-
+import base64
+from io import BytesIO
 
 class VideoSource:
     def __init__(
@@ -37,6 +40,7 @@ class CaptureModule:
         video_sources: List[VideoSource] = [],
         audio_sources: List[AudioSource] = [],
         preview_mode: bool = False,
+        controller_module : Optional[ControllerModule] = None
     ):
         """
         初始化捕獲模組，包含影片和音頻來源。
@@ -50,6 +54,7 @@ class CaptureModule:
         self.storage_module: Optional[StorageModule] = None
         self.preview_windows = {}
         self.preview_mode = preview_mode
+        self.controller_module = controller_module
         self.is_running = True
 
         # 初始化影片捕獲
@@ -84,6 +89,10 @@ class CaptureModule:
         """
         預覽循環，持續顯示所有影片來源的最新幀。
         """
+        fps = 1
+        frame_interval = 1.0 / fps
+        last_send_time = time.time()
+        
         # 初始化每個影片來源的預覽視窗
         for video_capture in self.video_captures:
             source_id = video_capture.source
@@ -93,27 +102,56 @@ class CaptureModule:
             # 為每個影片來源創建視窗
             logger.info(f"👀 Starting preview: {source_id}")
             cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
-
+        frame_dict = defaultdict(lambda: None)
         # 顯示預覽的主循環
         while self.is_running:
-            for video_capture in self.video_captures:
-                frame = video_capture.buffer.get("frame")
-                if frame is not None:
-                    # 檢查影像格式並處理
-                    if len(frame.shape) == 2:
-                        # 單通道灰階影像，轉換為 BGR
-                        frame_bgr = cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR)
-                    else:
-                        frame_bgr = frame
+            current_time = time.time()
+            elapsed_time = current_time - last_send_time
 
-                    # 顯示影像
-                    window_name = self.preview_windows[video_capture.source]
-                    cv2.imshow(window_name, frame_bgr)
+            # 如果已經過的時間超過或等於一個幀的間隔，則發送幀
+            if elapsed_time >= frame_interval:
+                frame_dict = {}  # 重置 frame_dict 每次發送前
+
+                for video_capture in self.video_captures:
+                    frame = video_capture.buffer.get("frame")
+
+                    if frame is not None:
+                        # 檢查影像格式並處理
+                        if len(frame.shape) == 2:
+                            # 單通道灰階影像，轉換為 BGR
+                            frame_bgr = cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR)
+                        else:
+                            frame_bgr = frame
+
+                        # 編碼為 JPEG
+                        success, buffer = cv2.imencode('.jpg', frame_bgr)
+                        if success:
+                            # 將 JPEG 編碼轉為 base64 字串
+                            frame_bgr_base64 = base64.b64encode(buffer).decode('utf-8')
+                            frame_dict[video_capture.source] = frame_bgr_base64
+
+                            # 顯示影像
+                            window_name = self.preview_windows.get(video_capture.source, "Preview")
+                            cv2.imshow(window_name, frame_bgr)
+                        else:
+                            print(f"Failed to encode frame from {video_capture.source}")
+
+                # 發送幀數據到控制器模塊
+                if frame_dict:  # 只有在有幀數據時才發送
+                    self.controller_module.send_event("DATA", {
+                        "frame_dict": frame_dict
+                    })
+                    # print(f"Sent frame_dict at {current_time}")
+
+                    # 更新最後發送時間
+                    last_send_time = current_time
 
             # 處理視窗事件和顯示延遲
             if cv2.waitKey(1) & 0xFF == ord("q"):
                 self.is_running = False
 
+            # 為了減少 CPU 使用率，可以在每次循環末尾稍作休眠
+            time.sleep(0.001)  # 1 毫秒
         # 停止預覽時清理並關閉所有視窗
         cv2.destroyAllWindows()
 

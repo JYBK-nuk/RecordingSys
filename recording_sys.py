@@ -26,6 +26,7 @@ class RecordingSys:
             video_sources=self.video_sources,
             audio_sources=self.audio_sources,
             preview_mode=preview_mode,
+            controller_module=self.controller_module
         )
         self._print_startup_message()
         self._register_event_handlers()

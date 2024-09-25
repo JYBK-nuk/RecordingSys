@@ -28,6 +28,8 @@ class ControllerModule:
         )
         self.watchdog_task: asyncio.Task = None
         self._register_internal_handlers()
+        self.loop = asyncio.get_event_loop()
+
 
     def _register_internal_handlers(self):
         """
@@ -82,7 +84,7 @@ class ControllerModule:
             if not self.sio.connected:
                 try:
                     logger.info(f"Attempting to connect to server at {self.ws_uri} 🌐")
-                    await self.sio.connect(self.ws_uri, transports=["websocket"])
+                    await self.sio.connect(self.ws_uri, socketio_path="/recording-sys")
                     await self._authenticate()
                     await self.sio.wait()
                 except Exception as e:
@@ -134,6 +136,7 @@ class ControllerModule:
             await self.sio.disconnect()
 
     async def _wait_for_event(self, *event_names):
+        
         """
         等待特定事件的回應。
 
@@ -169,23 +172,32 @@ class ControllerModule:
             # 確保無論成功還是失敗都移除事件處理器
             for event in event_names:
                 self.sio.handlers["/"].pop(event, None)
-
     def send_event(self, event_name: str, payload: dict) -> None:
-        """
-        發送事件到伺服器。
-
-        參數：
-        - event_name: 事件名稱。
-        - payload: 事件負載。
-        """
         if self.sio.connected:
-            asyncio.create_task(self._send_event_async(event_name, payload))
+            future = asyncio.run_coroutine_threadsafe(
+                self._send_event_async(event_name, payload), self.loop
+            )
+            try:
+                future.result(timeout=5)  # Optional: handle result or timeout
+            except Exception as e:
+                logger.error(f"Failed to send event: {e}")
         else:
-            logger.warning("Socket.IO is not connected. Cannot send event.")
+            pass
+            # logger.warning("Socket.IO is not connected. Cannot send event.")
+
 
     async def _send_event_async(self, event_name: str, payload: dict) -> None:
         try:
             await self.sio.emit(event_name, payload)
-            logger.info(f"Sent event: {event_name} with payload: {json.dumps(payload)}")
+            # logger.info(f"Sent event: {event_name} with payload: {json.dumps(payload)}")
         except Exception as e:
             logger.error(f"Failed to send event: {e}")
+
+    def __del__(self):
+        if self.watchdog_task:
+            self.watchdog_task.cancel()
+            logger.info("Watchdog task cancelled.")
+        if self.sio.connected:
+            self.sio.disconnect()
+            logger.info("Disconnected from server.")
+        logger.info("ControllerModule instance deleted.")
