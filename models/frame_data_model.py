@@ -10,7 +10,7 @@ class FrameDataModel(BaseModel):
     timestamp: float
     person_positions: List[Any] = []
 
-    person_detection_stage_enable: bool = False  # 是這樣嗎xd
+    person_detection_stage_finish: bool = False  # 是這樣嗎xd
     # 初始化YOLO model/分類類別 /偵測到的物件們
     model: Optional[Any] = None
     detection_class: List[str] = []

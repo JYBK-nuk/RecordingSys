@@ -39,6 +39,7 @@ class PersonDetectionStage(PipelineStage):
         data.people_boxes, data.combined_boxes = self.get_people_boxes(  # 單獨物件列表
             data.detections
         )
+        data.person_detection_stage_finish = True
         return frame, data
 
     def __test_generate_random_positions(self) -> Any:
