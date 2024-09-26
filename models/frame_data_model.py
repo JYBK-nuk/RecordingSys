@@ -1,7 +1,7 @@
 # models/frame_data_model.py
 
-from pydantic import BaseModel
-from typing import List, Any
+from pydantic import BaseModel, ConfigDict
+from typing import List, Any, Optional
 from ultralytics import YOLOWorld
 import supervision as sv
 
@@ -10,15 +10,17 @@ class FrameDataModel(BaseModel):
     timestamp: float
     person_positions: List[Any] = []
     # 初始化YOLO model/分類類別 /偵測到的物件們
-    model: YOLOWorld
+    model: Optional[Any] = None
     detection_class: List[str] = []
-    detections: sv.Detections
+    detections: Optional[sv.Detections] = None
     # 單獨物件列表
     people_boxes: List[Any] = []
     combined_boxes: List[Any] = []
-    closest_blackboard: Any
+    closest_blackboard: list[int] = []
     # 可以快速添加新的屬性，例如：
     # additional_info: dict = {}
+    # 配置项，允许任意类型
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def serialized(self):
         return self.model_dump_json()

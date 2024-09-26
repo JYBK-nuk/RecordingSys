@@ -6,15 +6,15 @@ import time
 import cv2
 
 cap = cv2.VideoCapture(0)
-processing_pipeline = ProcessingPipeline(source=self.source)
+processing_pipeline = ProcessingPipeline(source=cap)
 pipelines = [
-    ImageCroppingStage(),  # 黑板先
     PersonDetectionStage(),
+    ImageCroppingStage(),
     DeblurringStage(),
 ]
 for stage in pipelines:
     processing_pipeline.add_stage(stage.__class__.__name__, stage)
-while cap.is_running:
+while cap.isOpened():
     ret, frame = cap.read()
 
     timestamp = time.time()

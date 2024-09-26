@@ -34,25 +34,27 @@ class ImageCroppingStage(PipelineStage):
         # 建立一個空白畫布
         blank_canvas = np.zeros_like(frame)
         # 找出中央最大黑板
-        data.closest_blackboard = self.find_center_axis(self, frame, data.model)
-        # 中央最大黑板座標
-        x1, y1, x2, y2, _ = data.closest_blackboard
-        self.combined_boxes.append(data.closest_blackboard)
+        data.closest_blackboard = self.find_center_axis(frame, data.model)
 
-        # detections = data.detections  # 取得偵測物件(人/黑板)
-        # 去除黑板區域中的人遮擋的地方
-        blank_canvas = self.process_blackboard_area(  # 處理黑板區域中人的部分
-            self, frame, data, blank_canvas
-        )
-        # 切出只有黑板的部分
-        blank_canvas_crop = blank_canvas[y1:y2, x1:x2]
-        # 原圖黑板部分
-        origin_crop = frame[y1:y2, x1:x2]
-        # 同時看兩個圖
-        frame_preview = cv2.vconcat([blank_canvas_crop, origin_crop])
+        # 中央最大黑板座標  如果有才會設值，跟做後續處理
+        if data.closest_blackboard is not None:
+            x1, y1, x2, y2, _ = data.closest_blackboard
+            self.combined_boxes.append(data.closest_blackboard)
+
+            # detections = data.detections  # 取得偵測物件(人/黑板)
+            # 去除黑板區域中的人遮擋的地方
+            blank_canvas = self.process_blackboard_area(  # 處理黑板區域中人的部分
+                frame=frame, data=data, blank_canvas=blank_canvas, padding=31
+            )
+            # 切出只有黑板的部分
+            blank_canvas_crop = blank_canvas[y1:y2, x1:x2]
+            # 原圖黑板部分
+            origin_crop = frame[y1:y2, x1:x2]
+            # 同時看兩個圖
+            frame_preview = cv2.vconcat([blank_canvas_crop, origin_crop])
         return frame, data
 
-    def find_closest_blackboard(detection, frame_center):
+    def find_closest_blackboard(self, detection, frame_center):
         closest_box = None
         min_distance = float("inf")
 
@@ -92,7 +94,7 @@ class ImageCroppingStage(PipelineStage):
     def process_blackboard_area(
         self, frame, data: FrameDataModel, blank_canvas, padding=30
     ):
-        if data.closest_blackboard:
+        if data.closest_blackboard is not None:
             x1, y1, x2, y2, _ = data.closest_blackboard
             blackboard_area = frame[y1:y2, x1:x2].copy()
             for box in data.people_boxes:
