@@ -16,6 +16,7 @@ class FrameDataModel(BaseModel):
     # 單獨物件列表
     people_boxes: List[Any] = []
     combined_boxes: List[Any] = []
+    closest_blackboard: Any
     # 可以快速添加新的屬性，例如：
     # additional_info: dict = {}
 
