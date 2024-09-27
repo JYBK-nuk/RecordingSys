@@ -34,7 +34,7 @@ class PersonDetectionStage(PipelineStage):
         """
 
         data.person_positions = self.__test_generate_random_positions()
-        data = self.init_object_detection_model(data)  # 初始化YOLO model/分類類別
+        # data = self.init_object_detection_model(data)  # 初始化YOLO model/分類類別  移動至processing_pipeline
         data.detections = self.get_detections(frame, data.model)  # 偵測到的物件們
         data.people_boxes, data.combined_boxes = self.get_people_boxes(  # 單獨物件列表
             data.detections

@@ -29,6 +29,7 @@ class DeblurringStage(PipelineStage):
         - data: 更新後的數據模型
         """
         # TODO: 添加實際的清晰化代碼
+        data.deblurring_stage_finished = True
         return frame, data
 
     def adjust_contrast(image: np.ndarray, factor: float) -> np.ndarray:

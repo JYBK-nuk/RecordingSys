@@ -4,6 +4,7 @@ import time
 from typing import List, Tuple, Dict, Any, TYPE_CHECKING
 from models import FrameDataModel
 from .pipeline_stage import PipelineStage
+from ultralytics import YOLOWorld
 
 
 class ProcessingPipeline:
@@ -69,6 +70,15 @@ class ProcessingPipeline:
         data = FrameDataModel(timestamp=timestamp)
         for stage_name, stage in self.stages:
             if self.stage_configs[stage_name]["enabled"]:
+                data = self.init_object_detection_model(
+                    data
+                )  # 初始化YOLO model/分類類別
                 frame, data = stage.process(frame, data)
 
         return frame, data, timestamp
+
+    def init_object_detection_model(self, data: FrameDataModel):
+        data.detection_class = ["person", "blackboard"]
+        data.model = YOLOWorld("yolov8s-world.pt")
+        data.model.set_classes(data.detection_class)
+        return data
