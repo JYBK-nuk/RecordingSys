@@ -89,7 +89,7 @@ class CaptureModule:
         """
         預覽循環，持續顯示所有影片來源的最新幀。
         """
-        fps = 1
+        fps = 30
         frame_interval = 1.0 / fps
         last_send_time = time.time()
         

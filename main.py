@@ -29,7 +29,7 @@ video_sources = [
     ),
     VideoSource(
         source=1,
-        pipelines=[ImageBinarizationStage()],
+        pipelines=[],
     ),
 ]
 
@@ -49,7 +49,7 @@ async def main() -> None:
 
     try:
         # 啟動 controller module (WebSocket listener)
-        await controller_module.start()
+        controller_module.start()
 
         # 保持主程式運行，直到收到中斷信號
         while True:

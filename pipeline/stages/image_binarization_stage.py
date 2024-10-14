@@ -41,7 +41,7 @@ class ImageBinarizationStage(PipelineStage):
         _, binarized_frame = cv2.threshold(
             gray_frame, self.threshold, 255, cv2.THRESH_BINARY
         )
-        binarized_frame2 = binarized_frame(frame)
+        
         data.image_binarization_stage_finish = True
         # 返回處理後的幀和更新後的數據模型
         return binarized_frame, data

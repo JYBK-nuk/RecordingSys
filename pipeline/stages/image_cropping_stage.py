@@ -47,7 +47,7 @@ class ImageCroppingStage(PipelineStage):
             )  # 將黑板框加入到已偵測的框中
 
             # 去除黑板區域中的人遮擋的地方 如果有做人的偵測的話
-            if data.person_detection_stage_finish == True:
+            if data.person_detection_stage_finish:
                 blank_canvas = self.process_blackboard_area(  # 處理黑板區域中人的部分
                     frame=frame, data=data, blank_canvas=blank_canvas, padding=31
                 )

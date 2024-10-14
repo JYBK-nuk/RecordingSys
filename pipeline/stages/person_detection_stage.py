@@ -3,6 +3,8 @@
 import json
 import random
 from typing import Any, Tuple
+
+import cv2
 from pipeline import PipelineStage
 from models import FrameDataModel
 import numpy as np
@@ -33,30 +35,25 @@ class PersonDetectionStage(PipelineStage):
         - data: 更新後的數據模型
         """
 
-        data.person_positions = self.__test_generate_random_positions()
-        # data = self.init_object_detection_model(data)  # 初始化YOLO model/分類類別  移動至processing_pipeline
         data.detections = self.get_detections(frame, data.model)  # 偵測到的物件們
+        
+        # === preview ===
+        # using supervisor to draw the boxes
+        round_box_annotator = sv.RoundBoxAnnotator()
+        annotated_frame = round_box_annotator.annotate(
+            scene=frame.copy(),
+            detections=data.detections,
+        )
+        cv2.imshow("preview_log_person", annotated_frame)
+        cv2.waitKey(1)
+        # === preview ===
+        
         data.people_boxes, data.combined_boxes = self.get_people_boxes(  # 單獨物件列表
             data.detections
         )
         data.person_detection_stage_finish = True
+        
         return frame, data
-
-    def __test_generate_random_positions(self) -> Any:
-        test = [
-            {
-                "x": random.randint(0, 1920),
-                "y": random.randint(0, 1080),
-            }
-            for _ in range(random.randint(0, 10))
-        ]
-        return test
-
-    def init_object_detection_model(self, data: FrameDataModel):
-        data.detection_class = ["person", "blackboard"]
-        data.model = YOLOWorld("yolov8s-world.pt")
-        data.model.set_classes(data.detection_class)
-        return data
 
     def get_detections(self, frame, model):
         results = model.predict(frame, conf=0.5)

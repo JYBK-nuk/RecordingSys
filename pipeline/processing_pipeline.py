@@ -17,6 +17,13 @@ class ProcessingPipeline:
         self.source = source
         self.stages: List[Tuple[str, PipelineStage]] = []
         self.stage_configs: Dict[str, Dict[str, Any]] = {}
+        self.shared_data = {
+            "detection_class": ["person", "blackboard"],
+            "model": YOLOWorld("yolov8s-world.pt"),
+        }
+        
+        # init
+        self.shared_data["model"].set_classes(self.shared_data["detection_class"])
 
     def add_stage(self, stage_name: str, stage: PipelineStage) -> None:
         """
@@ -68,17 +75,15 @@ class ProcessingPipeline:
         - timestamp: 幀的時間戳
         """
         data = FrameDataModel(timestamp=timestamp)
+        data = self.copy_shared_data(data) 
         for stage_name, stage in self.stages:
             if self.stage_configs[stage_name]["enabled"]:
-                data = self.init_object_detection_model(
-                    data
-                )  # 初始化YOLO model/分類類別
                 frame, data = stage.process(frame, data)
 
         return frame, data, timestamp
 
-    def init_object_detection_model(self, data: FrameDataModel):
-        data.detection_class = ["person", "blackboard"]
-        data.model = YOLOWorld("yolov8s-world.pt")
-        data.model.set_classes(data.detection_class)
+    def copy_shared_data(self, data: FrameDataModel):
+        # 初始化YOLO model / 分類類別
+        data.detection_class = self.shared_data["detection_class"]
+        data.model = self.shared_data["model"]
         return data
