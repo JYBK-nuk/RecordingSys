@@ -29,6 +29,7 @@ def process_image(image: np.ndarray) -> np.ndarray:
     return binary_image
 
 
+# no use
 def draw_contours(image: np.ndarray, contours: list) -> np.ndarray:
     output = image.copy()
     cv2.drawContours(output, contours, -1, (0, 255, 0), 2)

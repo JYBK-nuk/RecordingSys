@@ -34,11 +34,12 @@ class PersonDetectionStage(PipelineStage):
         """
 
         data.person_positions = self.__test_generate_random_positions()
-        data = self.init_object_detection_model(data)  # 初始化YOLO model/分類類別
+        # data = self.init_object_detection_model(data)  # 初始化YOLO model/分類類別  移動至processing_pipeline
         data.detections = self.get_detections(frame, data.model)  # 偵測到的物件們
         data.people_boxes, data.combined_boxes = self.get_people_boxes(  # 單獨物件列表
-            frame, data.detections
+            data.detections
         )
+        data.person_detection_stage_finish = True
         return frame, data
 
     def __test_generate_random_positions(self) -> Any:
@@ -51,7 +52,7 @@ class PersonDetectionStage(PipelineStage):
         ]
         return test
 
-    def init_object_detection_model(data: FrameDataModel):
+    def init_object_detection_model(self, data: FrameDataModel):
         data.detection_class = ["person", "blackboard"]
         data.model = YOLOWorld("yolov8s-world.pt")
         data.model.set_classes(data.detection_class)
@@ -63,7 +64,7 @@ class PersonDetectionStage(PipelineStage):
         return detection
 
     # 把畫面中的人加入=>人列表
-    def annotate_people(self, detection):
+    def get_people_boxes(self, detection):
         people_boxes_temp = []
         combined_boxes_temp = []
         for i, (box, class_id) in enumerate(zip(detection.xyxy, detection.class_id)):

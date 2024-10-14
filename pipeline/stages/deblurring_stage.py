@@ -3,6 +3,7 @@
 from typing import Any, Tuple
 from pipeline import PipelineStage
 from models import FrameDataModel
+import numpy as np
 
 
 class DeblurringStage(PipelineStage):
@@ -28,4 +29,9 @@ class DeblurringStage(PipelineStage):
         - data: 更新後的數據模型
         """
         # TODO: 添加實際的清晰化代碼
+        data.deblurring_stage_finished = True
         return frame, data
+
+    def adjust_contrast(image: np.ndarray, factor: float) -> np.ndarray:
+        mean = np.mean(image)
+        return np.clip((1 - factor) * mean + factor * image, 0, 255).astype(np.uint8)
