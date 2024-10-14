@@ -205,49 +205,6 @@ class SaveThread(threading.Thread):
     def stop(self):
         self.is_running = False
 
-    class StorageModule:
-        def __init__(
-            self,
-            recording_name: str,
-            capture_module: "CaptureModule",
-            fps: int = 30,
-            base_path: str = "recordings",
-        ):
-            """
-            初始化儲存模組，用於保存影片和音頻數據。
-
-            參數：
-            - recording_name: 錄製的名稱，用於創建對應的目錄。
-            - capture_module: 引用 CaptureModule 實例，用於訪問捕獲的數據。
-            - fps: 影片的幀率。
-            - base_path: 基礎錄製目錄的路徑。
-            """
-            self.recording_name = recording_name
-            self.capture_module = capture_module
-            self.save_thread = SaveThread(self, fps=fps)
-            self.base_path = base_path
-
-        def start(self):
-            """
-            開始錄製，創建錄製目錄並啟動保存線程。
-            """
-            # 創建基礎錄製目錄
-            video_path = os.path.join(self.base_path, self.recording_name, "videos")
-            audio_path = os.path.join(self.base_path, self.recording_name, "audios")
-            os.makedirs(video_path, exist_ok=True)
-            os.makedirs(audio_path, exist_ok=True)
-            # 開始保存線程
-            self.save_thread.start()
-            logger.info(f"StorageModule started recording: {self.recording_name}")
-
-        def stop(self):
-            """
-            停止錄製，並停止保存線程。
-            """
-            # 停止保存線程
-            self.save_thread.stop()
-            logger.info(f"StorageModule stopped recording: {self.recording_name}")
-
 
 class StorageModule:
     def __init__(
