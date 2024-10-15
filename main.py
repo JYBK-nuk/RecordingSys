@@ -5,12 +5,14 @@ from logger import logger
 from controller import ControllerModule
 import os
 from pipeline.stages import (
-    PersonDetectionStage,
     ImageCroppingStage,
     DeblurringStage,
     ImageBinarizationStage,
+    PersonRemovingStage,
+    ObjectDetectionStage,
 )
 from recording_sys import RecordingSys
+
 
 # Sources
 audio_sources = [
@@ -21,10 +23,11 @@ video_sources = [
     VideoSource(
         source=0,
         pipelines=[
-            PersonDetectionStage(),
+            ObjectDetectionStage(),
+            PersonRemovingStage(),
             ImageCroppingStage(),
-            DeblurringStage(),
-            ImageBinarizationStage(),
+            # DeblurringStage(),
+            # ImageBinarizationStage(),
         ],
     ),
     VideoSource(

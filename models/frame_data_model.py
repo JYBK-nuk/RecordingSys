@@ -21,8 +21,7 @@ class FrameDataModel(BaseModel):
 
     # 單獨物件列表
     people_boxes: List[Any] = []
-    combined_boxes: List[Any] = []
-    closest_blackboard: list[int] = []
+    blackboard_boxes: List[Any] = []
 
     # 配置项，允许任意类型
     model_config = ConfigDict(arbitrary_types_allowed=True)

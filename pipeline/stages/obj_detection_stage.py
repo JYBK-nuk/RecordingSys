@@ -12,19 +12,20 @@ from ultralytics import YOLOWorld
 import supervision as sv
 
 
-class PersonDetectionStage(PipelineStage):
-    def __init__(self, threshold: float = 0.5):
+class ObjectDetectionStage(PipelineStage):
+    def __init__(self, conf=0.5):
         """
-        初始化人物檢測階段
+        初始化物件檢測階段
 
         參數：
-        - threshold: 檢測閾值
+        -
         """
-        self.threshold: float = threshold
+        self.classes = ["person", "blackboard"]
+        self.conf = conf
 
     def process(self, frame: Any, data: FrameDataModel) -> Tuple[Any, FrameDataModel]:
         """
-        執行人物檢測
+        執行物件檢測
 
         參數：
         - frame: 當前影片幀
@@ -34,9 +35,13 @@ class PersonDetectionStage(PipelineStage):
         - frame: 處理後的影片幀
         - data: 更新後的數據模型
         """
-
+        data.model.set_classes(self.classes)
         data.detections = self.get_detections(frame, data.model)  # 偵測到的物件們
+        data.people_boxes, data.blackboard_boxes = self.annotate_box(
+            data.detections
+        )  # 單獨物件列表
         
+
         # === preview ===
         # using supervisor to draw the boxes
         round_box_annotator = sv.RoundBoxAnnotator()
@@ -44,30 +49,24 @@ class PersonDetectionStage(PipelineStage):
             scene=frame.copy(),
             detections=data.detections,
         )
-        cv2.imshow("preview_log_person", annotated_frame)
+        cv2.imshow("obj_preview_log", annotated_frame)
         cv2.waitKey(1)
         # === preview ===
-        
-        data.people_boxes, data.combined_boxes = self.get_people_boxes(  # 單獨物件列表
-            data.detections
-        )
-        data.person_detection_stage_finish = True
-        
+
         return frame, data
 
-    def get_detections(self, frame, model):
-        results = model.predict(frame, conf=0.5)
+    def get_detections(self, frame, model: YOLOWorld):
+        results = model.predict(frame, conf=self.conf, verbose=False)
         detection = sv.Detections.from_ultralytics(results[0])
         return detection
 
-    # 把畫面中的人加入=>人列表
-    def get_people_boxes(self, detection):
-        people_boxes_temp = []
-        combined_boxes_temp = []
+    def annotate_box(self, detection):
+        people_boxes = []
+        blackboard_boxes = []
+
         for i, (box, class_id) in enumerate(zip(detection.xyxy, detection.class_id)):
             if class_id == 0:  # Person class
-                people_boxes_temp.append(box)
-            elif class_id != 1:  # Exclude blackboard
-                x1, y1, x2, y2 = map(int, box)
-                combined_boxes_temp.append([x1, y1, x2, y2, class_id])
-        return people_boxes_temp, combined_boxes_temp
+                people_boxes.append(box)
+            elif class_id == 1:  # Blackboard class
+                blackboard_boxes.append(box)
+        return people_boxes, blackboard_boxes

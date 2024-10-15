@@ -1,6 +1,6 @@
 # pipeline/processing_pipeline.py
 
-import time
+import os
 from typing import List, Tuple, Dict, Any, TYPE_CHECKING
 from models import FrameDataModel
 from .pipeline_stage import PipelineStage
@@ -18,12 +18,8 @@ class ProcessingPipeline:
         self.stages: List[Tuple[str, PipelineStage]] = []
         self.stage_configs: Dict[str, Dict[str, Any]] = {}
         self.shared_data = {
-            "detection_class": ["person", "blackboard"],
-            "model": YOLOWorld("yolov8s-world.pt"),
+            "model": YOLOWorld("yolov8s-world.pt",verbose=False),
         }
-        
-        # init
-        self.shared_data["model"].set_classes(self.shared_data["detection_class"])
 
     def add_stage(self, stage_name: str, stage: PipelineStage) -> None:
         """
@@ -83,7 +79,5 @@ class ProcessingPipeline:
         return frame, data, timestamp
 
     def copy_shared_data(self, data: FrameDataModel):
-        # 初始化YOLO model / 分類類別
-        data.detection_class = self.shared_data["detection_class"]
         data.model = self.shared_data["model"]
         return data
