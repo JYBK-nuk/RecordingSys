@@ -20,18 +20,18 @@ audio_sources = [
     AudioSource(source=2, samplerate=44100, channels=1),
 ]
 video_sources = [
+    # VideoSource(
+    #     source=0,
+    #     pipelines=[
+    #         ObjectDetectionStage(),
+    #         PersonRemovingStage(),
+    #         ImageCroppingStage(),
+    #         # DeblurringStage(),
+    #         # ImageBinarizationStage(),
+    #     ],
+    # ),
     VideoSource(
         source=0,
-        pipelines=[
-            ObjectDetectionStage(),
-            PersonRemovingStage(),
-            ImageCroppingStage(),
-            # DeblurringStage(),
-            # ImageBinarizationStage(),
-        ],
-    ),
-    VideoSource(
-        source=1,
         pipelines=[],
     ),
 ]
@@ -52,7 +52,7 @@ async def main() -> None:
 
     try:
         # 啟動 controller module (WebSocket listener)
-        controller_module.start()
+        await controller_module.start()
 
         # 保持主程式運行，直到收到中斷信號
         while True:
