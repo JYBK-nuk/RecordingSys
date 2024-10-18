@@ -63,7 +63,7 @@ class RecordingSys:
         if self.recording:
             self.recording = False
             self.capture_module.stop_recording()
-            self.count_time = round(time.time() - self.start_time, 2)
+            self.count_time = time.time() - self.start_time
             logger.info("Recording stopped. 🛑")
         else:
             logger.warning("Recording is not currently in progress.")
@@ -73,9 +73,8 @@ class RecordingSys:
         logger.info("👋 Shutting down the system...")
 
     def get_current_info(self) -> None:
-        logger.info(f"get current info: {self.recording} {self.count_time}")
+        time: str = self.count_time
         recording: bool = self.recording
-        time = self.count_time
         stages_info = []
         for vc in self.capture_module.video_captures:
             source = vc.source
@@ -108,7 +107,7 @@ class RecordingSys:
     @event_handler("START")
     async def handle_start(self, data: dict) -> None:
         self.start_recording()
-        logger.info(f"start recording {self.recording} {self.count_time}")
+        logger.info(f"start recording {self.count_time}")
         self.controller_module.send_event(
             "DATA",
             {
@@ -122,7 +121,7 @@ class RecordingSys:
     @event_handler("STOP")
     async def handle_stop(self, data: dict) -> None:
         self.stop_recording()
-        logger.info(f"start recording {self.recording} {self.count_time}")
+        logger.info(f"stop recording {self.count_time}")
 
         self.controller_module.send_event(
             "DATA",
@@ -136,13 +135,20 @@ class RecordingSys:
 
     @event_handler("ENABLE_STAGE")
     async def handle_enable_stage(self, data: dict) -> None:
-        logger.info("enable stage", data)
         stage_name: str = data.get("stage_name")
         source: int = data.get("source")
         for vc in self.capture_module.video_captures:
             if vc.source == source:
                 vc.processing_pipeline.set_stage_enabled(stage_name, True)
-                await self.handle_get_current_info(data)
+                self.controller_module.send_event(
+                    "DATA",
+                    {
+                        "current_info": {
+                            "time": time,
+                            "stages": vc.processing_pipeline.stages,
+                        }
+                    },
+                )
                 break
 
     @event_handler("DISABLE_STAGE")
@@ -152,7 +158,15 @@ class RecordingSys:
         for vc in self.capture_module.video_captures:
             if vc.source == source:
                 vc.processing_pipeline.set_stage_enabled(stage_name, False)
-                await self.handle_get_current_info(data)
+                self.controller_module.send_event(
+                    "DATA",
+                    {
+                        "current_info": {
+                            "time": time,
+                            "stages": vc.processing_pipeline.stages,
+                        }
+                    },
+                )
                 break
 
     @event_handler("SET_PARAMETER")
