@@ -18,3 +18,15 @@ class PipelineStage:
         - data: 更新後的數據模型
         """
         raise NotImplementedError("Subclasses must implement this method")
+
+    def get_parameters(self) -> dict:
+        """
+        獲取處理階段的參數
+
+        返回：
+        - params: 參數字典
+        """
+        pass
+
+    def set_parameters(self, params: dict) -> None:
+        pass

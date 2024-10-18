@@ -30,7 +30,6 @@ class ControllerModule:
         self._register_internal_handlers()
         self.loop = asyncio.get_event_loop()
 
-
     def _register_internal_handlers(self):
         """
         註冊內部 Socket.IO 事件處理器。
@@ -136,7 +135,6 @@ class ControllerModule:
             await self.sio.disconnect()
 
     async def _wait_for_event(self, *event_names):
-        
         """
         等待特定事件的回應。
 
@@ -172,6 +170,7 @@ class ControllerModule:
             # 確保無論成功還是失敗都移除事件處理器
             for event in event_names:
                 self.sio.handlers["/"].pop(event, None)
+
     def send_event(self, event_name: str, payload: dict) -> None:
         if self.sio.connected:
             future = asyncio.run_coroutine_threadsafe(
@@ -184,7 +183,6 @@ class ControllerModule:
         else:
             pass
             # logger.warning("Socket.IO is not connected. Cannot send event.")
-
 
     async def _send_event_async(self, event_name: str, payload: dict) -> None:
         try:

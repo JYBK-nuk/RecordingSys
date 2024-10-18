@@ -23,6 +23,12 @@ class ObjectDetectionStage(PipelineStage):
         self.classes = ["person", "blackboard"]
         self.conf = conf
 
+    def get_parameters(self):
+        return {"conf": self.conf}
+
+    def set_parameters(self, params):
+        self.conf = params.get("conf", self.conf)
+
     def process(self, frame: Any, data: FrameDataModel) -> Tuple[Any, FrameDataModel]:
         """
         執行物件檢測
@@ -40,7 +46,6 @@ class ObjectDetectionStage(PipelineStage):
         data.people_boxes, data.blackboard_boxes = self.annotate_box(
             data.detections
         )  # 單獨物件列表
-        
 
         # === preview ===
         # using supervisor to draw the boxes

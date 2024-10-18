@@ -17,6 +17,7 @@ import numpy as np
 import base64
 from io import BytesIO
 
+
 class VideoSource:
     def __init__(
         self,
@@ -40,7 +41,7 @@ class CaptureModule:
         video_sources: List[VideoSource] = [],
         audio_sources: List[AudioSource] = [],
         preview_mode: bool = False,
-        controller_module : Optional[ControllerModule] = None
+        controller_module: Optional[ControllerModule] = None,
     ):
         """
         初始化捕獲模組，包含影片和音頻來源。
@@ -89,10 +90,10 @@ class CaptureModule:
         """
         預覽循環，持續顯示所有影片來源的最新幀。
         """
-        fps = 30
+        fps = 5
         frame_interval = 1.0 / fps
         last_send_time = time.time()
-        
+
         # 初始化每個影片來源的預覽視窗
         for video_capture in self.video_captures:
             source_id = video_capture.source
@@ -124,23 +125,25 @@ class CaptureModule:
                             frame_bgr = frame
 
                         # 編碼為 JPEG
-                        success, buffer = cv2.imencode('.jpg', frame_bgr)
+                        success, buffer = cv2.imencode(".jpg", frame_bgr)
                         if success:
                             # 將 JPEG 編碼轉為 base64 字串
-                            frame_bgr_base64 = base64.b64encode(buffer).decode('utf-8')
+                            frame_bgr_base64 = base64.b64encode(buffer).decode("utf-8")
                             frame_dict[video_capture.source] = frame_bgr_base64
 
                             # 顯示影像
-                            window_name = self.preview_windows.get(video_capture.source, "Preview")
+                            window_name = self.preview_windows.get(
+                                video_capture.source, "Preview"
+                            )
                             cv2.imshow(window_name, frame_bgr)
                         else:
                             print(f"Failed to encode frame from {video_capture.source}")
 
                 # 發送幀數據到控制器模塊
                 if frame_dict:  # 只有在有幀數據時才發送
-                    self.controller_module.send_event("DATA", {
-                        "frame_dict": frame_dict
-                    })
+                    self.controller_module.send_event(
+                        "DATA", {"frame_dict": frame_dict}
+                    )
                     # print(f"Sent frame_dict at {current_time}")
 
                     # 更新最後發送時間

@@ -220,7 +220,6 @@ class StorageModule:
         self.base_path = base_path
         self.audio_buffers = defaultdict(queue.Queue)
 
-
     def start(self):
         # 創建基礎錄製目錄
         video_path = os.path.join(self.base_path, self.recording_name, "videos")

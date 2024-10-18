@@ -5,6 +5,7 @@ from typing import List, Tuple, Dict, Any, TYPE_CHECKING
 from models import FrameDataModel
 from .pipeline_stage import PipelineStage
 from ultralytics import YOLOWorld
+from logger import logger
 
 
 class ProcessingPipeline:
@@ -18,7 +19,7 @@ class ProcessingPipeline:
         self.stages: List[Tuple[str, PipelineStage]] = []
         self.stage_configs: Dict[str, Dict[str, Any]] = {}
         self.shared_data = {
-            "model": YOLOWorld("yolov8s-world.pt",verbose=False),
+            "model": YOLOWorld("yolov8s-world.pt", verbose=False),
         }
 
     def add_stage(self, stage_name: str, stage: PipelineStage) -> None:
@@ -44,21 +45,43 @@ class ProcessingPipeline:
             self.stage_configs[stage_name]["enabled"] = enabled
             print(f"Stage '{stage_name}' enabled: {enabled}")
 
-    def set_stage_parameter(self, stage_name: str, param_name: str, value: Any) -> None:
+    def set_stage_parameter(self, stage_name: str, params: dict) -> None:
         """
         設置處理階段的參數
 
         參數：
         - stage_name: 處理階段名稱
-        - param_name: 參數名稱
-        - value: 參數值
+        - params: 參數字典
         """
         for name, stage in self.stages:
             if name == stage_name:
-                setattr(stage, param_name, value)
+                stage.set_parameters(params)
                 print(
-                    f"Set parameter '{param_name}' of stage '{stage_name}' to {value}"
+                    f"Set parameters for stage '{stage_name}': {stage.get_parameters()}"
                 )
+
+    def get_stage_parameter(self, stage_name: str) -> Any:
+        """
+        獲取處理階段的參數值
+
+        參數：
+        - stage_name: 處理階段名稱
+        - param_name: 參數名稱
+        """
+        logger.info(f"Getting stage '{stage_name}'")
+        for name, stage in self.stages:
+            if name == stage_name:
+                logger.info(f"Get stage '{stage_name}': {stage.get_parameters()}")
+                return stage.get_parameters()
+
+    def set_parameter(self, stage_name: str, param_name: str, value: Any) -> None:
+        if stage_name in self.stage_configs:
+            self.stage_configs[stage_name][param_name] = value
+            print(f"Set parameter '{param_name}' for stage '{stage_name}': {value}")
+
+    def get_parameter(self, stage_name: str, param_name: str) -> Any:
+        if stage_name in self.stage_configs:
+            return self.stage_configs[stage_name].get(param_name)
 
     def process(
         self, frame: Any, timestamp: float
@@ -71,7 +94,7 @@ class ProcessingPipeline:
         - timestamp: 幀的時間戳
         """
         data = FrameDataModel(timestamp=timestamp)
-        data = self.copy_shared_data(data) 
+        data = self.copy_shared_data(data)
         for stage_name, stage in self.stages:
             if self.stage_configs[stage_name]["enabled"]:
                 frame, data = stage.process(frame, data)
