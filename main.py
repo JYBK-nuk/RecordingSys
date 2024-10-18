@@ -16,26 +16,25 @@ from recording_sys import RecordingSys
 
 # Sources
 audio_sources = [
-    AudioSource(source=0, samplerate=44100, channels=1),
-    AudioSource(source=2, samplerate=44100, channels=1),
+    # AudioSource(source=0, samplerate=44100, channels=1),
+    # AudioSource(source=2, samplerate=44100, channels=1),
 ]
 video_sources = [
     VideoSource(
-        source=0,
+        source=1,
         pipelines=[
             ObjectDetectionStage(),
             PersonRemovingStage(),
             ImageCroppingStage(),
-            # DeblurringStage(),
+            DeblurringStage(),
             # ImageBinarizationStage(),
         ],
     ),
     VideoSource(
-        source=1,
+        source=0,
         pipelines=[],
     ),
 ]
-
 
 
 async def main() -> None:
@@ -52,7 +51,7 @@ async def main() -> None:
 
     try:
         # 啟動 controller module (WebSocket listener)
-        controller_module.start()
+        await controller_module.start()
 
         # 保持主程式運行，直到收到中斷信號
         while True:
@@ -68,6 +67,7 @@ async def main() -> None:
         await controller_module.stop()
         logger.info("Program exited.")
 
+
 def load_config():
     config_path = "config.json"
     default_config = {
@@ -81,6 +81,7 @@ def load_config():
 
     config = json.load(open(config_path))
     return config
+
 
 if __name__ == "__main__":
     try:

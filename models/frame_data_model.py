@@ -4,6 +4,8 @@ from pydantic import BaseModel, ConfigDict
 from typing import List, Any, Optional
 from ultralytics import YOLOWorld
 import supervision as sv
+import json
+import numpy as np
 
 
 class FrameDataModel(BaseModel):
@@ -27,9 +29,8 @@ class FrameDataModel(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def serialized(self):
-        return str(
+        return json.dumps(
             {
                 "timestamp": self.timestamp,
-                "people_boxes": self.people_boxes,
             }
         )
