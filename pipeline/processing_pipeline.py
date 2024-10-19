@@ -74,6 +74,20 @@ class ProcessingPipeline:
                 logger.info(f"Get stage '{stage_name}': {stage.get_parameters()}")
                 return stage.get_parameters()
 
+    def get_stages(self):
+        stages_info = []
+        for stage_name, stage in self.stages:
+            stage_info = {
+                "name": stage_name,
+                "status": {
+                    "key": str(self.source),
+                    "status": self.stage_configs[stage_name]["enabled"],
+                },
+                "params": stage.get_parameters(),
+            }
+            stages_info.append(stage_info)
+        return stages_info
+
     def set_parameter(self, stage_name: str, param_name: str, value: Any) -> None:
         if stage_name in self.stage_configs:
             self.stage_configs[stage_name][param_name] = value

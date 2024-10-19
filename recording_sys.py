@@ -32,6 +32,7 @@ class RecordingSys:
         )
         self._print_startup_message()
         self._register_event_handlers()
+        self.controller_module.on_initial = self.get_current_info
 
     def _print_startup_message(self) -> None:
         startup_message = "👉 Starting up the system..."
@@ -77,22 +78,10 @@ class RecordingSys:
         recording: bool = self.recording
         stages_info = []
         for vc in self.capture_module.video_captures:
-            source = vc.source
-            stages = vc.processing_pipeline.stages
-            for stage_name, stage in stages:
-                stage_info = {
-                    "name": stage_name,
-                    "status": {
-                        "key": str(source),
-                        "status": vc.processing_pipeline.stage_configs[stage_name][
-                            "enabled"
-                        ],
-                    },
-                    "params": stage.get_parameters(),
-                }
-                stages_info.append(stage_info)
 
+            stages_info += vc.processing_pipeline.get_stages()
         logger.info(f"stages_info: {stages_info}")
+
         self.controller_module.send_event(
             "DATA",
             {
@@ -140,15 +129,7 @@ class RecordingSys:
         for vc in self.capture_module.video_captures:
             if vc.source == source:
                 vc.processing_pipeline.set_stage_enabled(stage_name, True)
-                self.controller_module.send_event(
-                    "DATA",
-                    {
-                        "current_info": {
-                            "time": time,
-                            "stages": vc.processing_pipeline.stages,
-                        }
-                    },
-                )
+                self.get_current_info()
                 break
 
     @event_handler("DISABLE_STAGE")
@@ -158,15 +139,7 @@ class RecordingSys:
         for vc in self.capture_module.video_captures:
             if vc.source == source:
                 vc.processing_pipeline.set_stage_enabled(stage_name, False)
-                self.controller_module.send_event(
-                    "DATA",
-                    {
-                        "current_info": {
-                            "time": time,
-                            "stages": vc.processing_pipeline.stages,
-                        }
-                    },
-                )
+                self.get_current_info()
                 break
 
     @event_handler("SET_PARAMETER")

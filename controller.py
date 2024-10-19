@@ -27,6 +27,7 @@ class ControllerModule:
             reconnection=False  # 禁用內建的自動重連，改為手動控制
         )
         self.watchdog_task: asyncio.Task = None
+        self.on_initial = Callable
         self._register_internal_handlers()
         self.loop = asyncio.get_event_loop()
 
@@ -128,6 +129,7 @@ class ControllerModule:
             event, data = await self._wait_for_event("authenticated", "unauthorized")
             if event == "authenticated":
                 logger.info("✅ Authentication successful.")
+                self.on_initial()
             else:
                 logger.error("❌ Authentication failed.")
         except asyncio.TimeoutError:
@@ -176,10 +178,10 @@ class ControllerModule:
             future = asyncio.run_coroutine_threadsafe(
                 self._send_event_async(event_name, payload), self.loop
             )
-            try:
-                future.result(timeout=5)  # Optional: handle result or timeout
-            except Exception as e:
-                logger.error(f"Failed to send event: {e}")
+            # try:
+            #     future.result(timeout=5)  # Optional: handle result or timeout
+            # except Exception as e:
+            #     logger.error(f"Failed to send event: {e}")
         else:
             pass
             # logger.warning("Socket.IO is not connected. Cannot send event.")
