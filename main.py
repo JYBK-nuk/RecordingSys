@@ -1,6 +1,5 @@
 import asyncio
 import json
-
 from capture.capture_module import AudioSource, VideoSource
 from logger import logger
 from controller import ControllerModule
@@ -13,7 +12,6 @@ from pipeline.stages import (
     ObjectDetectionStage,
 )
 from recording_sys import RecordingSys
-
 
 # Sources
 audio_sources = [
@@ -85,6 +83,7 @@ def load_config():
 
 
 if __name__ == "__main__":
+    print("Starting program...")
     try:
         asyncio.run(main())
     except KeyboardInterrupt:

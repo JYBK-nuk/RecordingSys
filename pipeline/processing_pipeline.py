@@ -4,7 +4,7 @@ import os
 from typing import List, Tuple, Dict, Any, TYPE_CHECKING
 from models import FrameDataModel
 from .pipeline_stage import PipelineStage
-from ultralytics import YOLOWorld
+from ultralytics import YOLO
 from logger import logger
 
 
@@ -19,7 +19,7 @@ class ProcessingPipeline:
         self.stages: List[Tuple[str, PipelineStage]] = []
         self.stage_configs: Dict[str, Dict[str, Any]] = {}
         self.shared_data = {
-            "model": YOLOWorld("yolov8s-world.pt", verbose=False),
+            "model": YOLO("yolov8n-fp16.engine", verbose=False),
         }
 
     def add_stage(self, stage_name: str, stage: PipelineStage) -> None:

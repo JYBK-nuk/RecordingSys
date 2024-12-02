@@ -57,6 +57,7 @@ class CaptureModule:
         self.preview_mode = preview_mode
         self.controller_module = controller_module
         self.is_running = True
+        self.is_streaming: bool = False
 
         # 初始化影片捕獲
         for source in video_sources:
@@ -131,16 +132,17 @@ class CaptureModule:
                             frame_bgr_base64 = base64.b64encode(buffer).decode("utf-8")
                             frame_dict[video_capture.source] = frame_bgr_base64
 
-                            # 顯示影像
-                            window_name = self.preview_windows.get(
-                                video_capture.source, "Preview"
-                            )
-                            cv2.imshow(window_name, frame_bgr)
+                            if self.preview_mode:
+                                # 顯示影像
+                                window_name = self.preview_windows.get(
+                                    video_capture.source, "Preview"
+                                )
+                                cv2.imshow(window_name, frame_bgr)
                         else:
                             print(f"Failed to encode frame from {video_capture.source}")
 
                 # 發送幀數據到控制器模塊
-                if frame_dict:  # 只有在有幀數據時才發送
+                if frame_dict and self.is_streaming:  # 只有在有幀數據時才發送
                     self.controller_module.send_event(
                         "DATA", {"frame_dict": frame_dict}
                     )
@@ -238,3 +240,9 @@ class CaptureModule:
 
         for ac in self.audio_captures:
             ac.audio_buffer = None
+
+    def toggle_preview(self):
+        """
+        切換預覽模式。
+        """
+        self.is_streaming = not self.is_streaming

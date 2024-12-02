@@ -7,22 +7,24 @@ import sounddevice as sd
 from logger import logger
 from controller import ControllerModule
 import time
+from typing import List
+
 
 
 class RecordingSys:
     def __init__(
         self,
         controller_module: ControllerModule,
-        video_sources: list[VideoSource],
-        audio_sources: list[AudioSource],
+        video_sources: List[VideoSource],
+        audio_sources: List[AudioSource],
         preview_mode: bool = False,
     ) -> None:
         self.controller_module: ControllerModule = controller_module
         self.recording: bool = False
         self.start_time: float = 0.0
         self.count_time: float = 0.0
-        self.video_sources: list[VideoSource] = video_sources
-        self.audio_sources: list[AudioSource] = audio_sources
+        self.video_sources: List[VideoSource] = video_sources
+        self.audio_sources: List[AudioSource] = audio_sources
 
         self.capture_module = CaptureModule(
             video_sources=self.video_sources,
@@ -78,7 +80,6 @@ class RecordingSys:
         recording: bool = self.recording
         stages_info = []
         for vc in self.capture_module.video_captures:
-
             stages_info += vc.processing_pipeline.get_stages()
         logger.info(f"stages_info: {stages_info}")
 
@@ -89,6 +90,7 @@ class RecordingSys:
                     "recording": recording,
                     "time": time,
                     "stages": stages_info,
+                    "is_streaming": self.capture_module.is_streaming,
                 }
             },
         )
@@ -159,3 +161,9 @@ class RecordingSys:
     @event_handler("GET_CURRENT_INFO")
     async def handle_get_current_info(self, data: dict) -> None:
         self.get_current_info()
+
+    @event_handler("TOGGLE_PREVIEW")
+    async def handle_toggle_preview(self, data: dict) -> None:
+        self.capture_module.toggle_preview()
+        self.get_current_info()
+        logger.info(f"preview mode {self.capture_module.preview_mode}")
